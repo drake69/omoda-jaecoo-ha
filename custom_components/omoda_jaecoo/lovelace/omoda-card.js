@@ -13,7 +13,38 @@
  *   integration: "omoda_jaecoo"  # platform to collect (default)
  *   prefix: "omoda_jaecoo_"      # object_id fallback prefix
  */
+// UI strings, picked from the user's Home Assistant language (falls back to English).
+// To add a language: copy the "en" block, translate the values, keep the keys.
+const OMODA_I18N = {
+  en: {
+    locked: "Locked", unlocked: "Unlocked", charging: "Charging", idle: "Idle",
+    range: "Range", odometer: "Odometer", cable: "Cable",
+    plugged_in: "Plugged in", unplugged: "Unplugged",
+    battery_low: "Battery low", offline: "Offline",
+    details: "Details", more: "More", card_error: "Omoda card error",
+    card_description: "Sleek summary card for the Omoda/Jaecoo integration (photo, battery, range, charging, warnings).",
+  },
+  pl: {
+    locked: "Zamknięty", unlocked: "Otwarty", charging: "Ładowanie", idle: "Bezczynny",
+    range: "Zasięg", odometer: "Przebieg", cable: "Kabel",
+    plugged_in: "Podłączony", unplugged: "Odłączony",
+    battery_low: "Niska bateria", offline: "Offline",
+    details: "Szczegóły", more: "Więcej", card_error: "Błąd karty Omoda",
+    card_description: "Zwięzła karta podsumowania dla integracji Omoda/Jaecoo (zdjęcie, bateria, zasięg, ładowanie, ostrzeżenia).",
+  },
+};
+const omodaLang = (hass) => {
+  const l = String((hass && ((hass.locale && hass.locale.language) || hass.language))
+    || (typeof navigator !== "undefined" && navigator.language) || "en").toLowerCase();
+  return OMODA_I18N[l] ? l : (OMODA_I18N[l.split("-")[0]] ? l.split("-")[0] : "en");
+};
+
 class OmodaCard extends HTMLElement {
+  _t(key) {
+    const d = OMODA_I18N[omodaLang(this._hass)];
+    return (d && d[key]) || OMODA_I18N.en[key] || key;
+  }
+
   setConfig(config) {
     this.config = Object.assign(
       { integration: "omoda_jaecoo", prefix: "omoda_jaecoo_", show_all: false },
@@ -171,7 +202,7 @@ class OmodaCard extends HTMLElement {
       this._render(hass);
     } catch (e) {
       this.content.innerHTML =
-        `<div style="padding:16px;color:var(--error-color,#e5484d)">Omoda card error: ${e && e.message ? e.message : e}</div>`;
+        `<div style="padding:16px;color:var(--error-color,#e5484d)">${this._h(this._t("card_error"))}: ${this._h(e && e.message ? e.message : e)}</div>`;
     }
   }
 
@@ -200,13 +231,13 @@ class OmodaCard extends HTMLElement {
 
     const lock = this._find(items, "lock");
     const lockText = lock && !this._dead(lock.s)
-      ? (lock.s.state === "locked" ? "Locked" : "Unlocked") : "—";
+      ? (lock.s.state === "locked" ? this._t("locked") : this._t("unlocked")) : "—";
     const lockIcon = lock && lock.s.state === "unlocked" ? "mdi:lock-open-variant" : "mdi:lock";
 
     // ---- hero (photo or gradient) — subline shows the lock status ----
     const img = cfg.image || items.map((r) => r.s.attributes.vehicle_image).find(Boolean) || "";
     const sub = isCharging
-      ? `<div class="sub"><ha-icon icon="mdi:flash"></ha-icon>Charging · <ha-icon icon="${lockIcon}"></ha-icon>${this._h(lockText)}</div>`
+      ? `<div class="sub"><ha-icon icon="mdi:flash"></ha-icon>${this._h(this._t("charging"))} ·<ha-icon icon="${lockIcon}"></ha-icon>${this._h(lockText)}</div>`
       : `<div class="sub"><ha-icon icon="${lockIcon}"></ha-icon>${this._h(lockText)}</div>`;
     const battBadge = (bat && !this._dead(bat.s))
       ? `<div class="batt" data-e="${this._h(bat.id)}">
@@ -231,24 +262,24 @@ class OmodaCard extends HTMLElement {
     const metric = (label, icon, value, entityId) => `
       <div class="metric" ${entityId ? `data-e="${this._h(entityId)}"` : ""}>
         <div class="v">${this._h(value)}</div><div class="l"><ha-icon icon="${icon}"></ha-icon>${this._h(label)}</div></div>`;
-    const chargeText = charging && !this._dead(charging.s) ? (isCharging ? "Charging" : "Idle")
-      : (chargeState && !this._dead(chargeState.s) ? chargeState.s.state : "—");
+    const chargeText = charging && !this._dead(charging.s) ? (isCharging ? this._t("charging") : this._t("idle"))
+      : (chargeState && !this._dead(chargeState.s) ? this._disp(chargeState.s) : "—");
     const metrics = `<div class="metrics">
-      ${metric("Range", "mdi:map-marker-distance", range && !this._dead(range.s) ? this._disp(range.s) : "—", range && range.id)}
-      ${metric("Charging", isCharging ? "mdi:battery-charging" : "mdi:power-plug", chargeText)}
-      ${odo && !this._dead(odo.s) ? metric("Odometer", "mdi:counter", this._disp(odo.s), odo.id)
-        : metric("Cable", "mdi:power-plug", plug && plug.s.state === "on" ? "Plugged in" : "Unplugged")}
+      ${metric(this._t("range"), "mdi:map-marker-distance", range && !this._dead(range.s) ? this._disp(range.s) : "—", range && range.id)}
+      ${metric(this._t("charging"), isCharging ? "mdi:battery-charging" : "mdi:power-plug", chargeText)}
+      ${odo && !this._dead(odo.s) ? metric(this._t("odometer"), "mdi:counter", this._disp(odo.s), odo.id)
+        : metric(this._t("cable"), "mdi:power-plug", plug && plug.s.state === "on" ? this._t("plugged_in") : this._t("unplugged"))}
     </div>`;
 
     // ---- warnings (only active) ----
     const warns = [];
     items.filter((r) => /tire.*warning|tyre.*warning/.test(r.key) && r.s.state === "on")
       .forEach((r) => warns.push({ id: r.id, icon: "mdi:car-tire-alert",
-        text: (r.s.attributes.friendly_name || r.key).replace(new RegExp("^" + deviceRe + "\\s*", "i"), "").replace(/warning/i, "").trim() }));
+        text: (r.s.attributes.friendly_name || r.key).replace(new RegExp("^" + deviceRe + "\\s*", "i"), "").replace(/\s*[–-]?\s*(warning|ostrzeżenie)/i, "").trim() }));
     const low = this._find(items, "battery_low");
-    if (low && low.s.state === "on") warns.push({ id: low.id, icon: "mdi:battery-alert", text: "Battery low" });
+    if (low && low.s.state === "on") warns.push({ id: low.id, icon: "mdi:battery-alert", text: this._t("battery_low") });
     const conn = this._find(items, "connection");
-    if (conn && conn.s.state === "off") warns.push({ id: conn.id, icon: "mdi:wifi-off", text: "Offline" });
+    if (conn && conn.s.state === "off") warns.push({ id: conn.id, icon: "mdi:wifi-off", text: this._t("offline") });
     const warnHtml = warns.length ? `<div class="warns">${warns.map((w) =>
       `<div class="warn" data-e="${this._h(w.id)}"><ha-icon icon="${w.icon}"></ha-icon>${this._h(w.text)}</div>`).join("")}</div>` : "";
 
@@ -261,10 +292,10 @@ class OmodaCard extends HTMLElement {
       return `<div class="row" data-e="${this._h(id)}"><div>${this._h(name)}</div><div class="val">${this._h(this._disp(s))}</div></div>`;
     };
     if (Array.isArray(cfg.entities) && cfg.entities.length) {
-      extra = `<div class="grp">Details</div>` + cfg.entities.map((e) => rowFor(typeof e === "string" ? e : e.entity)).join("");
+      extra = `<div class="grp">${this._h(this._t("details"))}</div>` + cfg.entities.map((e) => rowFor(typeof e === "string" ? e : e.entity)).join("");
     } else if (cfg.show_all) {
       const rest = items.filter((r) => !used.has(r.id) && !this._dead(r.s) && r.s.attributes.entity_category !== "diagnostic");
-      if (rest.length) extra = `<div class="grp">More</div>` +
+      if (rest.length) extra = `<div class="grp">${this._h(this._t("more"))}</div>` +
         rest.sort((a, b) => a.key.localeCompare(b.key)).map((r) => rowFor(r.id)).join("");
     }
 
@@ -285,6 +316,6 @@ if (!window.customCards.some((c) => c.type === "omoda-card")) {
     type: "omoda-card",
     name: "Omoda/Jaecoo Card",
     preview: true,
-    description: "Sleek summary card for the Omoda/Jaecoo integration (photo, battery, range, charging, warnings).",
+    description: OMODA_I18N[omodaLang(null)].card_description,
   });
 }

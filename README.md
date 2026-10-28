@@ -1,6 +1,6 @@
 # Omoda / Jaecoo → Home Assistant
 
-🌐 **English** · [Changelog](CHANGELOG.md)
+🌐 **English** · [Polski](README.pl.md) · [Changelog](CHANGELOG.md)
 
 ## English Fork & Localization Notes
 

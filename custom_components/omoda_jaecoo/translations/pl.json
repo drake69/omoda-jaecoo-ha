@@ -1,0 +1,459 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Omoda / Jaecoo",
+        "description": "Podaj adres e-mail konta Omoda/Jaecoo i PIN pojazdu. Kod OTP zostanie wysłany na Twój e-mail; VIN i identyfikator konta zostaną wykryte automatycznie.{reason}",
+        "data": {
+          "email": "E-mail konta",
+          "pin": "PIN do sterowania pojazdem",
+          "bff": "Endpoint BFF (region)",
+          "tsp_host": "Host konsoli TSP (region)",
+          "car_mqtt_host": "Host brokera MQTT pojazdu (region)",
+          "car_mqtt_port": "Port brokera MQTT pojazdu (region)",
+          "channel_id": "ID kanału (region)",
+          "certs_src": "Folder z certyfikatami mutual-TLS do zaimportowania (opcjonalnie)"
+        }
+      },
+      "otp": {
+        "title": "Kod weryfikacyjny z e-maila",
+        "description": "Wpisz kod OTP otrzymany e-mailem.{reason}",
+        "data": {
+          "code": "Kod OTP"
+        }
+      },
+      "select_vehicle": {
+        "title": "Wybierz pojazd",
+        "description": "Na Twoim koncie jest więcej niż jeden pojazd. Wybierz VIN, który chcesz dodać.",
+        "data": {
+          "vin": "Pojazd (VIN)"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Ponowne uwierzytelnienie Omoda / Jaecoo",
+        "description": "Sesja dla {email} wygasła (dzieje się tak po otwarciu oficjalnej aplikacji). Nowy kod OTP został wysłany na Twój e-mail — wpisz go, aby ponownie połączyć.{reason}",
+        "data": {
+          "code": "Kod OTP"
+        }
+      },
+      "reconfigure": {
+        "title": "Zmień PIN do sterowania pojazdem",
+        "description": "Wpisz 4-cyfrowy PIN używany do zdalnych poleceń. PIN nie służy do logowania, więc kod z e-maila nie jest potrzebny. Popraw go, jeśli polecenia zgłaszają sukces, ale samochód nic nie robi (błędny PIN).",
+        "data": {
+          "pin": "PIN do sterowania pojazdem"
+        }
+      }
+    },
+    "error": {
+      "otp_send_failed": "Nie udało się wysłać kodu OTP. Sprawdź e-mail/PIN i spróbuj ponownie.",
+      "otp_invalid": "Nieprawidłowy lub wygasły kod OTP.",
+      "no_vehicle": "Logowanie powiodło się, ale na tym koncie nie znaleziono żadnego pojazdu.",
+      "pin_required": "Wpisz PIN do sterowania pojazdem."
+    },
+    "abort": {
+      "already_configured": "Ten pojazd (VIN) jest już skonfigurowany.",
+      "token_move_failed": "Nie udało się zapisać tokenu uwierzytelniającego. Sprawdź uprawnienia folderu konfiguracji Home Assistant i spróbuj ponownie.",
+      "reauth_successful": "Ponowne uwierzytelnienie powiodło się — pojazd jest znowu połączony.",
+      "reconfigure_no_entry": "Nie znaleziono integracji — przeładuj Home Assistant i spróbuj ponownie.",
+      "reconfigure_successful": "PIN zaktualizowany. Integracja została przeładowana."
+    }
+  },
+  "issues": {
+    "pin_wrong": {
+      "title": "Omoda / Jaecoo: błędny PIN poleceń",
+      "fix_flow": {
+        "step": {
+          "pin": {
+            "title": "Popraw PIN do sterowania pojazdem",
+            "description": "Zdalne polecenia są odrzucane, ponieważ 4-cyfrowy PIN sterowania jest błędny (czujniki działają dalej — to nie jest problem z logowaniem). Wpisz poprawny PIN. Nie próbuj wielokrotnie z błędnym PIN-em, aby nie zablokować konta.",
+            "data": {
+              "pin": "PIN do sterowania pojazdem"
+            }
+          }
+        },
+        "error": {
+          "pin_required": "Wpisz PIN do sterowania pojazdem."
+        },
+        "abort": {
+          "entry_not_found": "Nie znaleziono integracji — przeładuj Home Assistant i spróbuj ponownie."
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Omoda / Jaecoo — automatyczne aktualizacje",
+        "description": "Jak często wybudzać samochód i odświeżać telemetrię oraz pozycję GPS. 0 = wyłączone. Interwał ładowania jest używany, gdy samochód jest podłączony do ładowarki (telemetria odświeża się częściej, aby śledzić ładowanie).",
+        "data": {
+          "poll_normal_min": "Interwał aktualizacji na postoju (minuty, 0 = wył.)",
+          "poll_charging_min": "Interwał aktualizacji podczas podłączenia (minuty, 0 = wył.)",
+          "vehicle_name": "Nazwa pojazdu (pozostaw puste, aby użyć nazwy wykrytej z samochodu)",
+          "vehicle_image": "URL zdjęcia pojazdu (opcjonalnie, wyświetlane na karcie)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "door_front_left": {
+        "name": "Drzwi przednie lewe"
+      },
+      "door_front_right": {
+        "name": "Drzwi przednie prawe"
+      },
+      "door_rear_left": {
+        "name": "Drzwi tylne lewe"
+      },
+      "door_rear_right": {
+        "name": "Drzwi tylne prawe"
+      },
+      "door_trunk": {
+        "name": "Bagażnik"
+      },
+      "door_hood": {
+        "name": "Maska"
+      },
+      "door_tailgate_moving": {
+        "name": "Klapa bagażnika w ruchu"
+      },
+      "window_front_left": {
+        "name": "Szyba przednia lewa"
+      },
+      "window_front_right": {
+        "name": "Szyba przednia prawa"
+      },
+      "window_rear_left": {
+        "name": "Szyba tylna lewa"
+      },
+      "window_rear_right": {
+        "name": "Szyba tylna prawa"
+      },
+      "window_sunroof": {
+        "name": "Szyberdach"
+      },
+      "window_sunshade": {
+        "name": "Roleta szyberdachu"
+      },
+      "climate_air_purification": {
+        "name": "Klimatyzacja: oczyszczanie powietrza"
+      },
+      "climate_windshield_defrost": {
+        "name": "Klimatyzacja: odmrażanie przedniej szyby"
+      },
+      "climate_windshield_heating": {
+        "name": "Klimatyzacja: ogrzewanie przedniej szyby"
+      },
+      "climate_rear_window_defrost": {
+        "name": "Klimatyzacja: odmrażanie tylnej szyby"
+      },
+      "climate_steering_wheel_heating": {
+        "name": "Klimatyzacja: podgrzewanie kierownicy"
+      },
+      "seat_driver_heating": {
+        "name": "Fotel kierowcy: podgrzewanie"
+      },
+      "seat_passenger_heating": {
+        "name": "Fotel pasażera: podgrzewanie"
+      },
+      "seat_driver_ventilation": {
+        "name": "Fotel kierowcy: wentylacja"
+      },
+      "seat_passenger_ventilation": {
+        "name": "Fotel pasażera: wentylacja"
+      },
+      "charge_plug": {
+        "name": "Wtyczka ładowania"
+      },
+      "engine": {
+        "name": "Silnik"
+      },
+      "tire_front_left_warning": {
+        "name": "Opona przednia lewa – ostrzeżenie"
+      },
+      "tire_front_right_warning": {
+        "name": "Opona przednia prawa – ostrzeżenie"
+      },
+      "tire_rear_left_warning": {
+        "name": "Opona tylna lewa – ostrzeżenie"
+      },
+      "tire_rear_right_warning": {
+        "name": "Opona tylna prawa – ostrzeżenie"
+      },
+      "battery_low": {
+        "name": "Niski poziom baterii"
+      },
+      "connection": {
+        "name": "Diagnostyka: połączenie"
+      },
+      "diagnostic_car_awake": {
+        "name": "Diagnostyka: samochód wybudzony"
+      },
+      "diagnostic_session": {
+        "name": "Diagnostyka: sesja"
+      },
+      "charging": {
+        "name": "Ładowanie"
+      }
+    },
+    "sensor": {
+      "lock": {
+        "name": "Zamek"
+      },
+      "seat_rear_left_heating": {
+        "name": "Fotel tylny lewy: podgrzewanie"
+      },
+      "seat_rear_right_heating": {
+        "name": "Fotel tylny prawy: podgrzewanie"
+      },
+      "seat_rear_center_heating": {
+        "name": "Fotel tylny środkowy: podgrzewanie"
+      },
+      "seat_rear_left_ventilation": {
+        "name": "Fotel tylny lewy: wentylacja"
+      },
+      "seat_rear_right_ventilation": {
+        "name": "Fotel tylny prawy: wentylacja"
+      },
+      "seat_rear_center_ventilation": {
+        "name": "Fotel tylny środkowy: wentylacja"
+      },
+      "window_sunroof_motion_state": {
+        "name": "Szyberdach: stan ruchu"
+      },
+      "range_electric": {
+        "name": "Zasięg elektryczny"
+      },
+      "range_electric_wltp": {
+        "name": "Zasięg elektryczny (WLTP)"
+      },
+      "range_gasoline": {
+        "name": "Zasięg na paliwie"
+      },
+      "range_total": {
+        "name": "Zasięg całkowity"
+      },
+      "range_combined_estimate": {
+        "name": "Zasięg łączny (szacunkowy)"
+      },
+      "odometer": {
+        "name": "Przebieg"
+      },
+      "hybrid_mileage": {
+        "name": "Przebieg hybrydowy"
+      },
+      "tire_front_left_pressure": {
+        "name": "Opona przednia lewa – ciśnienie"
+      },
+      "tire_front_right_pressure": {
+        "name": "Opona przednia prawa – ciśnienie"
+      },
+      "tire_rear_left_pressure": {
+        "name": "Opona tylna lewa – ciśnienie"
+      },
+      "tire_rear_right_pressure": {
+        "name": "Opona tylna prawa – ciśnienie"
+      },
+      "tire_front_left_temperature": {
+        "name": "Opona przednia lewa – temperatura"
+      },
+      "tire_front_right_temperature": {
+        "name": "Opona przednia prawa – temperatura"
+      },
+      "tire_rear_left_temperature": {
+        "name": "Opona tylna lewa – temperatura"
+      },
+      "tire_rear_right_temperature": {
+        "name": "Opona tylna prawa – temperatura"
+      },
+      "fuel_average_consumption": {
+        "name": "Średnie zużycie paliwa"
+      },
+      "electric_average_consumption": {
+        "name": "Średnie zużycie energii"
+      },
+      "fuel_remaining": {
+        "name": "Pozostałe paliwo"
+      },
+      "hv_battery_voltage": {
+        "name": "Napięcie baterii trakcyjnej"
+      },
+      "hv_battery_current": {
+        "name": "Prąd baterii trakcyjnej"
+      },
+      "charge_remaining_time": {
+        "name": "Pozostały czas ładowania"
+      },
+      "charging_power": {
+        "name": "Moc ładowania"
+      },
+      "charge_state": {
+        "name": "Stan ładowania"
+      },
+      "charge_scheduled_status": {
+        "name": "Status ładowania zaplanowanego"
+      },
+      "charge_fast_port": {
+        "name": "Złącze szybkiego ładowania"
+      },
+      "climate_target_temp_left": {
+        "name": "Klimatyzacja: temperatura docelowa lewa"
+      },
+      "climate_target_temp_right": {
+        "name": "Klimatyzacja: temperatura docelowa prawa"
+      },
+      "battery": {
+        "name": "Bateria"
+      },
+      "speed": {
+        "name": "Prędkość"
+      },
+      "diagnostic_session_status": {
+        "name": "Diagnostyka: status sesji"
+      },
+      "diagnostic_command_result": {
+        "name": "Diagnostyka: wynik polecenia"
+      },
+      "diagnostic_location_probe_result": {
+        "name": "Diagnostyka: wynik zapytania o lokalizację"
+      },
+      "diagnostic_wake_up_result": {
+        "name": "Diagnostyka: wynik wybudzenia"
+      },
+      "diagnostic_last_seen": {
+        "name": "Diagnostyka: ostatnio widziany"
+      },
+      "diagnostic_last_wake_up": {
+        "name": "Diagnostyka: ostatnie wybudzenie"
+      },
+      "diagnostic_last_position": {
+        "name": "Diagnostyka: ostatnia pozycja"
+      },
+      "electric_efficiency": {
+        "name": "Efektywność energetyczna"
+      }
+    },
+    "button": {
+      "find_car": {
+        "name": "Znajdź samochód (światła/klakson)"
+      },
+      "locate_car": {
+        "name": "Zlokalizuj samochód (GPS)"
+      },
+      "diagnostic_wake_car": {
+        "name": "Diagnostyka: wybudź samochód"
+      },
+      "diagnostic_refresh_location": {
+        "name": "Diagnostyka: odśwież lokalizację"
+      },
+      "diagnostic_refresh_full_status": {
+        "name": "Diagnostyka: odśwież pełny status"
+      },
+      "diagnostic_request_otp_code": {
+        "name": "Diagnostyka: wyślij kod OTP"
+      },
+      "diagnostic_confirm_otp": {
+        "name": "Diagnostyka: potwierdź OTP"
+      }
+    },
+    "switch": {
+      "charge_switch": {
+        "name": "Ładowanie"
+      },
+      "charge_scheduled_switch": {
+        "name": "Ładowanie zaplanowane"
+      },
+      "climate_windshield_defrost": {
+        "name": "Klimatyzacja: odmrażanie przedniej szyby"
+      },
+      "climate_rear_window_defrost": {
+        "name": "Klimatyzacja: odmrażanie tylnej szyby"
+      },
+      "climate_steering_wheel_heating": {
+        "name": "Klimatyzacja: podgrzewanie kierownicy"
+      },
+      "seat_driver_heating": {
+        "name": "Fotel kierowcy: podgrzewanie"
+      },
+      "seat_driver_ventilation": {
+        "name": "Fotel kierowcy: wentylacja"
+      },
+      "seat_passenger_heating": {
+        "name": "Fotel pasażera: podgrzewanie"
+      },
+      "seat_passenger_ventilation": {
+        "name": "Fotel pasażera: wentylacja"
+      },
+      "seat_rear_left_heating": {
+        "name": "Fotel tylny lewy: podgrzewanie"
+      },
+      "seat_rear_left_ventilation": {
+        "name": "Fotel tylny lewy: wentylacja"
+      },
+      "seat_rear_right_heating": {
+        "name": "Fotel tylny prawy: podgrzewanie"
+      },
+      "seat_rear_right_ventilation": {
+        "name": "Fotel tylny prawy: wentylacja"
+      },
+      "climate_cool_down_all": {
+        "name": "Klimatyzacja: schłodź wszystko"
+      },
+      "climate_heat_up_all": {
+        "name": "Klimatyzacja: ogrzej wszystko"
+      },
+      "alarm_theft": {
+        "name": "Alarm antykradzieżowy"
+      },
+      "auto_update": {
+        "name": "Automatyczna aktualizacja"
+      }
+    },
+    "cover": {
+      "door_trunk": {
+        "name": "Bagażnik"
+      },
+      "window_sunroof": {
+        "name": "Szyberdach"
+      }
+    },
+    "lock": {
+      "lock": {
+        "name": "Zamek"
+      }
+    },
+    "climate": {
+      "climate": {
+        "name": "Klimatyzacja"
+      }
+    },
+    "device_tracker": {
+      "location": {
+        "name": "Lokalizacja"
+      }
+    },
+    "number": {
+      "climate_duration": {
+        "name": "Czas pracy klimatyzacji"
+      },
+      "charge_duration": {
+        "name": "Czas ładowania"
+      }
+    },
+    "text": {
+      "diagnostic_otp_code": {
+        "name": "Diagnostyka: kod OTP"
+      }
+    },
+    "time": {
+      "charge_start_time": {
+        "name": "Godzina rozpoczęcia ładowania"
+      }
+    },
+    "select": {
+      "windows": {
+        "name": "Szyby"
+      }
+    }
+  }
+}
